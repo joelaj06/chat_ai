@@ -1,0 +1,76 @@
+# This file configures the analyzer, which statically analyzes Dart code to
+# check for errors, warnings, and lints.
+#
+# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
+# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
+# invoked from the command line by running `flutter analyze`.
+
+# The following line activates a set of recommended lints for Flutter apps,
+# packages, and plugins designed to encourage good coding practices.
+include: package:flutter_lints/flutter.yaml
+
+
+analyzer:
+  strong-mode:
+    implicit-casts: false
+    implicit-dynamic: false
+  errors:
+    missing_required_param: error
+    missing_return: error
+    unused_import: error
+    unused_local_variable: error
+    dead_code: error
+    # allow having TODOs in the code
+    todo: ignore
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+
+linter:
+  # The lint rules applied to this project can be customized in the
+  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
+  # included above or to enable additional rules. A list of all available lints
+  # and their documentation is published at
+  # https://dart-lang.github.io/linter/lints/index.html.
+  #
+  # Instead of disabling a lint rule for the entire project in the
+  # section below, it can also be suppressed for a single line of code
+  # or a specific dart file by using the `// ignore: name_of_lint` and
+  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
+  # producing the lint.
+  rules:
+    # All rules from pedantic, already enabled rules are left out
+    # https://github.com/google/pedantic/blob/master/lib/analysis_options.1.11.0.yaml
+    - always_declare_return_types
+    - prefer_single_quotes
+    - sort_child_properties_last
+    - unawaited_futures
+    - unsafe_html
+
+    # Additional rules from https://github.com/flutter/flutter/blob/master/analysis_options.yaml
+    # Not all rules are included
+    - always_put_control_body_on_new_line
+    - always_specify_types # also used by Flutter itself, makes it more readable
+    - avoid_slow_async_io
+    - cast_nullable_to_non_nullable
+    - directives_ordering
+    - missing_whitespace_between_adjacent_strings
+    - sort_pub_dependencies
+    - prefer_final_in_for_each
+    - prefer_final_locals
+    - prefer_foreach
+    - prefer_if_elements_to_conditional_expressions
+    - sort_constructors_first
+    - sort_unnamed_constructors_first
+    - test_types_in_equals
+    - tighten_type_of_initializing_formals
+    - unnecessary_await_in_return
+    - unnecessary_null_aware_assignments
+    - unnecessary_null_checks
+    - unnecessary_nullable_for_final_variable_declarations
+    - unnecessary_statements
+    - use_late_for_private_fields_and_variables
+    - use_named_constants
+    - use_raw_strings
+# Additional information about this file can be found at
+# https://dart.dev/guides/language/analysis-options
