@@ -74,31 +74,29 @@ class ChatScreen extends GetView<ChatController> {
           children: <Widget>[
             Flexible(
               child: Obx(
-                () => AnimatedList(
-                  key: controller.messageListGlobalKey,
+                () => ListView.builder(
                   physics: const BouncingScrollPhysics(),
                   reverse: true,
                   padding: EdgeInsets.zero,
-                  initialItemCount: controller.chatMessages.length,
-                  // itemCount: controller.chatMessages.length,
-                  itemBuilder: (BuildContext context, int index,
-                          Animation<double> animation) =>
+                  itemCount: controller.chatMessages.length,
+                  itemBuilder: (BuildContext context, int index,) =>
                       Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: _buildChatListTile(
-                        context, controller.chatMessages[index], animation),
+                        context, controller.chatMessages[index]),
                   ),
-                ),
               ),
+            ),
             ),
             _buildTextComposer(context),
           ],
-        ));
+        ),
+    );
   }
 
   Widget _buildChatListTile(
-      BuildContext context, ChatMessage message, Animation<double> animation) {
-    final bool isUser = message.sender == Sender.user;
+      BuildContext context, ChatMessage message,) {
+    final bool isUser = message.sender == Sender.user.name;
 
     return Column(
       crossAxisAlignment:
@@ -118,7 +116,7 @@ class ChatScreen extends GetView<ChatController> {
               )),
           child: Padding(
             padding: const EdgeInsets.all(8.0),
-            child: message.isImage? Image.network(
+            child: message.isImage && !isUser ? Image.network(
                     message.text,
                     loadingBuilder: (BuildContext context, Widget child,
                         ImageChunkEvent? loadingProgress) {

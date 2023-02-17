@@ -1,6 +1,8 @@
 import 'package:chat_ai/core/error/failure.dart';
+import 'package:chat_ai/features/chat_ai/data/datasource/sql_helper.dart';
 import 'package:chat_ai/features/chat_ai/data/model/message/message_model.dart';
 import 'package:chat_ai/features/chat_ai/data/model/message_image/message_image_model.dart';
+import 'package:chat_ai/features/chat_ai/data/request/chat_message/chat_message_request.dart';
 import 'package:chat_ai/features/chat_ai/data/request/chat_request.dart';
 import 'package:chat_ai/features/chat_ai/data/request/message_image_request.dart';
 import 'package:chat_ai/features/chat_ai/data/usecase/message/fetch_image_message.dart';
@@ -33,13 +35,13 @@ class ChatController extends GetxController {
   RxString recordedText = ''.obs;
   RxBool speechEnabled = false.obs;
 
-  final GlobalKey<AnimatedListState> messageListGlobalKey =
-      GlobalKey<AnimatedListState>();
+
   final SpeechToText speechToText = SpeechToText();
   static const String _defaultText = 'Tap on the record button to start';
 
   @override
   void onInit() {
+    getAllChatMessages();
     recordedText(_defaultText);
     _initSpeech();
     super.onInit();
@@ -51,8 +53,16 @@ class ChatController extends GetxController {
     super.dispose();
   }
 
+  void getAllChatMessages() async{
+    final List<ChatMessage> messages = await SqlHelper.fetchChatMessages();
+  //  chatMessages(messages);
+    chatMessages.clear();
+    for(final ChatMessage message in messages){
+      chatMessages.insert(0, message);
+    }
+  }
+
   void getMessageImage(String prompt) async {
-   // onMessageSend(isImage: true);
     isLoading(true);
     final Either<Failure, ImageMessage> failureOrImageMessage =
         await fetchImageMessage(MessageImageRequest(
@@ -73,12 +83,14 @@ class ChatController extends GetxController {
         if (imageUrl.isEmpty) {
           Get.snackbar('Error', 'Sorry could not get the image, try again');
         } else {
-          final ChatMessage chatMessage = ChatMessage(
+          final ChatMessageRequest messageRequest = ChatMessageRequest(
             isImage: true,
             text: imageUrl,
-            sender: Sender.bot,
+            sender: Sender.bot.name,
+            createdAt: DateTime.now().toIso8601String(),
           );
-          chatMessages.insert(0, chatMessage);
+          SqlHelper.addMessage(messageRequest);
+          getAllChatMessages();
         }
       },
     );
@@ -89,6 +101,7 @@ class ChatController extends GetxController {
   void sendTheMessage(String message) async {
     final List<String> stop = <String>['Human:', 'AI:'];
     isLoading(true);
+    print(message);
     final Either<Failure, Message> failureOrMessage = await sendMessage(
         MessageRequest(
             model: 'text-davinci-003',
@@ -109,17 +122,18 @@ class ChatController extends GetxController {
       (Message message) {
         isLoading(false);
          String text = message.choices?.first.text ?? '...';
-         print(text);
+
         if(text.contains('[Your name]')){
           text = text.replaceAll('[Your name]', 'Emy');
         }
-        final ChatMessage chatMessage = ChatMessage(
-          text: text,
-          sender: Sender.bot,
+        final ChatMessageRequest messageRequest = ChatMessageRequest(
           isImage: false,
+          text: text,
+          sender: Sender.bot.name,
+          createdAt: DateTime.now().toIso8601String(),
         );
-        chatMessages.insert(0, chatMessage);
-        messageListGlobalKey.currentState!.insertItem(0);
+        SqlHelper.addMessage(messageRequest);
+        getAllChatMessages();
       },
     );
   }
@@ -130,13 +144,16 @@ class ChatController extends GetxController {
         messageTextEditingController.value.text == _defaultText) {
       return;
     }
-    final ChatMessage chatMessage = ChatMessage(
+
+    final ChatMessageRequest messageRequest = ChatMessageRequest(
+      isImage: isImage,
       text: messageTextEditingController.value.text,
-      sender: Sender.user,
-      isImage: false
+      sender: Sender.user.name,
+      createdAt: DateTime.now().toIso8601String(),
     );
-    chatMessages.insert(0, chatMessage);
-    messageListGlobalKey.currentState!.insertItem(0);
+
+    await SqlHelper.addMessage(messageRequest);
+    getAllChatMessages();
 
     isImage ? getMessageImage(messageTextEditingController.value.text):
     sendTheMessage(messageTextEditingController.value.text);
@@ -176,7 +193,7 @@ class ChatController extends GetxController {
     isRecording(false);
     messageTextEditingController.value.text = recordedText.value;
     onMessageSend();
-    messageTextEditingController.value.clear();
+  //  messageTextEditingController.value.clear();
     resetSpeechText();
   }
 
@@ -191,3 +208,5 @@ class ChatController extends GetxController {
 }
 
 enum Sender { user, bot }
+
+
