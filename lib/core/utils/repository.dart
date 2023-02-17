@@ -28,6 +28,7 @@ abstract class Repository {
       return left(Failure(
           message: exception.message));
     } on TimeoutException catch (_) {
+
       return left(Failure(message: 'Request Timeout'));
     } on AppException catch (exception) {
       return left(Failure(
