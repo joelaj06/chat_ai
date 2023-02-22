@@ -1,6 +1,8 @@
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:chat_ai/core/presentation/theme/primary_color.dart';
+import 'package:chat_ai/core/utils/data_formatter.dart';
 import 'package:chat_ai/features/chat_ai/presentation/chat/getx/chat_controller.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -12,90 +14,144 @@ class ChatScreen extends GetView<ChatController> {
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.white,
-          elevation: 0.4,
-          flexibleSpace: SafeArea(
-            child: Container(
-              padding: const EdgeInsets.only(right: 16),
-              child: Row(
-                children: <Widget>[
-                  const SizedBox(
-                    width: 20,
-                  ),
-                  const CircleAvatar(
-                    backgroundImage:
-                        AssetImage('assets/images/chat_gpt_logo.png'),
-                    maxRadius: 20,
-                  ),
-                  const SizedBox(
-                    width: 12,
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: <Widget>[
-                        const Text(
-                          'Bot',
+        elevation: 0.4,
+        flexibleSpace: SafeArea(
+          child: Container(
+            padding: const EdgeInsets.only(right: 16),
+            child: Row(
+              children: <Widget>[
+                const SizedBox(
+                  width: 20,
+                ),
+                const CircleAvatar(
+                  backgroundImage:
+                      AssetImage('assets/images/chat_gpt_logo.png'),
+                  maxRadius: 20,
+                ),
+                const SizedBox(
+                  width: 12,
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      const Text(
+                        'Bot',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(
+                        height: 6,
+                      ),
+                      Obx(
+                        () => Text(
+                          controller.isLoading.value ? 'typing' : 'Online',
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600),
+                              fontStyle: controller.isLoading.value
+                                  ? FontStyle.italic
+                                  : FontStyle.normal,
+                              color: Colors.grey.shade600,
+                              fontSize: 13),
                         ),
-                        const SizedBox(
-                          height: 6,
-                        ),
-                        Obx(
-                          () => Text(
-                            controller.isLoading.value ? 'typing' : 'Online',
-                            style: TextStyle(
-                                fontStyle: controller.isLoading.value
-                                    ? FontStyle.italic
-                                    : FontStyle.normal,
-                                color: Colors.grey.shade600,
-                                fontSize: 13),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                  const Icon(
-                    Icons.settings,
-                    color: Colors.black54,
-                  ),
-                ],
+                ),
+                const Icon(
+                  Icons.settings,
+                  color: Colors.black54,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+      // extendBodyBehindAppBar: true,
+      body: Column(
+        children: <Widget>[
+          Flexible(
+            child: Obx(() {
+              final Map<String, List<ChatMessage>> groupByDate = groupBy(controller.chatMessages, (ChatMessage message) =>
+                  message.createdAt!.substring(0,10),);
+              return ListView.builder(
+                physics: const BouncingScrollPhysics(),
+                itemCount: groupByDate.values.length,
+                reverse: true,
+                itemBuilder: (BuildContext context, int index){
+                  final String key = groupByDate.keys.elementAt(index);
+                  return Column(
+                    children: <Widget>[
+                      _getGroupSeparator( groupByDate[key]![index]),
+                      ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          reverse: true,
+                          itemCount : groupByDate[key]!.length,
+                          itemBuilder: (BuildContext context, int index){
+                          return Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: _buildChatListTile(context, groupByDate[key]![index]),
+                          );
+                      }),
+                      /*Column(
+                        children: List<Widget>.generate(groupByDate[key]!.length , (int index) {
+                          return _buildChatListTile(context, groupByDate[key]![index]);
+                        }) ,
+                      )*/
+                    ],
+                  );
+                },
+              );
+
+            }
+               ),
+          ),
+          _buildTextComposer(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _getGroupSeparator(ChatMessage message ){
+    final DateTime element = DateTime.parse(message.createdAt!);
+    return SizedBox(
+      height: 50,
+      child: Align(
+        alignment: Alignment.center,
+        child: Container(
+          width: 120,
+          decoration: BoxDecoration(
+            color: PrimaryColor.color,
+            border: Border.all(
+              color: PrimaryColor.color,
+            ),
+            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              '${element.day}. ${element.month}, ${element.year}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: Colors.white54,
               ),
             ),
           ),
         ),
-        // extendBodyBehindAppBar: true,
-        body: Column(
-          children: <Widget>[
-            Flexible(
-              child: Obx(
-                () => ListView.builder(
-                  physics: const BouncingScrollPhysics(),
-                  reverse: true,
-                  padding: EdgeInsets.zero,
-                  itemCount: controller.chatMessages.length,
-                  itemBuilder: (BuildContext context, int index,) =>
-                      Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: _buildChatListTile(
-                        context, controller.chatMessages[index]),
-                  ),
-              ),
-            ),
-            ),
-            _buildTextComposer(context),
-          ],
-        ),
+      ),
     );
   }
 
   Widget _buildChatListTile(
-      BuildContext context, ChatMessage message,) {
+    BuildContext context,
+    ChatMessage message,
+  ) {
     final bool isUser = message.sender == Sender.user.name;
 
     return Column(
@@ -116,14 +172,17 @@ class ChatScreen extends GetView<ChatController> {
               )),
           child: Padding(
             padding: const EdgeInsets.all(8.0),
-            child: message.isImage && !isUser ? Image.network(
+            child: message.isImage && !isUser
+                ? Image.network(
                     message.text,
                     loadingBuilder: (BuildContext context, Widget child,
                         ImageChunkEvent? loadingProgress) {
-                      if(loadingProgress != null) {
+                      if (loadingProgress != null) {
                         return const CircularProgressIndicator.adaptive();
                       }
-                      return  SizedBox(child: child,);
+                      return SizedBox(
+                        child: child,
+                      );
                     },
                   )
                 : Text(
@@ -132,6 +191,12 @@ class ChatScreen extends GetView<ChatController> {
                     style:
                         TextStyle(color: isUser ? Colors.white : Colors.black),
                   ),
+          ),
+        ),
+        Text(
+          DateTime.parse(message.createdAt!).formatTime(),
+          style: const TextStyle(
+            fontSize: 12,
           ),
         ),
       ],
@@ -188,7 +253,7 @@ class ChatScreen extends GetView<ChatController> {
                                         color: Colors.white.withOpacity(0.2),
                                       ),
                                       onPressed: () {
-                                         controller.onMessageSend();
+                                        controller.onMessageSend();
                                       },
                                     )),
                                 textCapitalization:
@@ -218,7 +283,9 @@ class ChatScreen extends GetView<ChatController> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 5,),
+                          const SizedBox(
+                            width: 5,
+                          ),
                           CircleAvatar(
                             backgroundColor: Colors.white.withOpacity(0.2),
                             child: IconButton(

@@ -41,6 +41,7 @@ class ChatController extends GetxController {
 
   @override
   void onInit() {
+   // SqlHelper.alterTable(DbTables.chatMessages, 'date');
     getAllChatMessages();
     recordedText(_defaultText);
     _initSpeech();

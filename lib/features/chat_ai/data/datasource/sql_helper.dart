@@ -11,6 +11,7 @@ class SqlHelper {
       text TEXT,
       isImage INTEGER NOT NULL,
       sender TEXT
+      date TEXT
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
       )
       ''');
@@ -38,8 +39,9 @@ class SqlHelper {
     final Map<String, dynamic> data = <String, dynamic>{
       'text' : messageRequest.text,
       'isImage' :messageRequest.isImage == true ? 1 : 0,
-     // 'createdAt': messageRequest.createdAt,
+      //'createdAt': messageRequest.createdAt,
       'sender': messageRequest.sender,
+      'date' : messageRequest.createdAt,
     };
     final int id = await db.insert(
       DbTables.chatMessages,
@@ -62,7 +64,7 @@ class SqlHelper {
             'id': data['id'],
             'text' : data['text'],
             'isImage' :data['isImage'] == 1 ? true : false,
-            'createdAt': data['createdAt'],
+            'createdAt': data['date'],
             'sender': data['sender'],
           };
          return ChatMessage.fromJson(json);
@@ -84,7 +86,7 @@ class SqlHelper {
       'id': data['id'],
       'text' : data['text'],
       'isImage' :data['isImage'] == 1 ? true : false,
-      'createdAt': data['createdAt'],
+      'createdAt': data['date'],
       'sender': data['sender'],
     };
     return ChatMessage.fromJson(json);
@@ -97,8 +99,9 @@ class SqlHelper {
     final Map<String, dynamic> data = <String, dynamic>{
       'text' : messageRequest.text,
       'isImage' :messageRequest.isImage == true ? 1 : 0,
-      'createdAt': messageRequest.createdAt,
+      //'createdAt': messageRequest.createdAt,
       'sender': messageRequest.sender,
+      'date': messageRequest.createdAt,
     };
     final int id = await db.update(
       DbTables.chatMessages,
