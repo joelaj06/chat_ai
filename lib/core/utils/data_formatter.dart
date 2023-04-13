@@ -13,6 +13,8 @@ extension DateHelper on DateTime {
     return formatter.format(this);
   }
 
+
+
   String formatTime() {
     final DateFormat formatter = DateFormat(timeFormatter);
     final String dateTime = formatter.add_jm().format(this);
@@ -52,8 +54,8 @@ class DataFormatter{
     return Jiffy(date, 'yyyy-MM-dd').fromNow();
   }*/
 
+    ///'Wednesday, January 10, 2012'
   static String formatDateToString(String date){
-    // ==> 'Wednesday, January 10, 2012'
     if(date == '') {
       return date;
     }

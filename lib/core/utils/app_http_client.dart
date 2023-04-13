@@ -11,7 +11,7 @@ import 'app_log.dart';
 
 class AppHTTPClient {
   final Logger appLog = appLogger(AppHTTPClient);
-  static const int requestTimeout = 20;
+  static const int requestTimeout = 30;
 
   //GET
   Future<dynamic> get(String baseUrl, String endpoint) async {

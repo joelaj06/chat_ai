@@ -1,5 +1,6 @@
 import 'package:chat_ai/features/chat_ai/data/model/message/message_model.dart';
 import 'package:chat_ai/features/chat_ai/data/model/message_image/message_image_model.dart';
+import 'package:chat_ai/features/chat_ai/data/request/message_request.dart';
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/error/failure.dart';
@@ -13,7 +14,8 @@ abstract class ChatAiRepository{
     double? frequencyPenalty,
     double? presencePenalty,
     List<String>? stop,
-    int topP,
+    List<NewMessageRequest>? messages,
+    int? topP,
 });
 
   Future<Either<Failure, ImageMessage>> fetchImageMessage({

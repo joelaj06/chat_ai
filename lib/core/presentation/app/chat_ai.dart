@@ -16,7 +16,9 @@ class ChatAi extends StatelessWidget {
       initialBinding: MainBindings(),
       getPages: Pages.pages,
       initialRoute: AppRoutes.chat,
-      theme: AppTheme.data,
+      theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: ThemeMode.light,
     );
   }
 }

@@ -10,6 +10,7 @@ part 'image_data_model.g.dart';
 class ImageData with _$ImageData {
   const factory ImageData({
     String? url,
+    @JsonKey(name: 'b64_json') String? base64String,
   }) = _ImageData;
 
   const ImageData._();

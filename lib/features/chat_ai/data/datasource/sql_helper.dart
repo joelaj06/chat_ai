@@ -116,8 +116,10 @@ class SqlHelper {
   static Future<void> deleteChatMessage(int id) async{
     final sql.Database db = await dbInit();
     try{
-      await db.delete(DbTables.chatMessages,  where: '?',
+      print(id);
+      final int count = await db.delete(DbTables.chatMessages,  where: 'id = ?',
         whereArgs: <int>[id],);
+      debugPrint('Deleted $count row(s)');
     }catch(e){
       debugPrint('Something went wrong deleting the item $e');
     }

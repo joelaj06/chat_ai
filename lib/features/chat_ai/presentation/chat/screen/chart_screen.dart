@@ -6,7 +6,9 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
 
+import '../../../../../core/presentation/widget/app_alerts.dart';
 import '../../../data/model/chat_message/chat_message_model.dart';
 
 class ChatScreen extends GetView<ChatController> {
@@ -14,11 +16,8 @@ class ChatScreen extends GetView<ChatController> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
         elevation: 0.4,
         flexibleSpace: SafeArea(
           child: Container(
@@ -29,8 +28,7 @@ class ChatScreen extends GetView<ChatController> {
                   width: 20,
                 ),
                 const CircleAvatar(
-                  backgroundImage:
-                      AssetImage('assets/images/chat_gpt_logo.png'),
+                  backgroundImage: AssetImage('assets/images/robot.png'),
                   maxRadius: 20,
                 ),
                 const SizedBox(
@@ -63,10 +61,18 @@ class ChatScreen extends GetView<ChatController> {
                     ],
                   ),
                 ),
-                const Icon(
-                  Icons.settings,
-                  color: Colors.black54,
-                ),
+                IconButton(
+                  onPressed: () {
+                    controller.toggleTheme();
+                  },
+                  icon: Obx(
+                    () => Icon(
+                      controller.isDarkMode.value
+                          ? Icons.light_mode
+                          : Icons.dark_mode,
+                    ),
+                  ),
+                )
               ],
             ),
           ),
@@ -77,28 +83,63 @@ class ChatScreen extends GetView<ChatController> {
         children: <Widget>[
           Flexible(
             child: Obx(() {
-              final Map<String, List<ChatMessage>> groupByDate = groupBy(controller.chatMessages, (ChatMessage message) =>
-                  message.createdAt!.substring(0,10),);
+              final Map<String, List<ChatMessage>> groupByDate = groupBy(
+                controller.chatMessages,
+                (ChatMessage message) => message.createdAt!.substring(0, 10),
+              );
               return ListView.builder(
                 physics: const BouncingScrollPhysics(),
                 itemCount: groupByDate.values.length,
                 reverse: true,
-                itemBuilder: (BuildContext context, int index){
+                itemBuilder: (BuildContext context, int index) {
                   final String key = groupByDate.keys.elementAt(index);
+                  final ChatMessage message = groupByDate[key]![index];
+                  print(groupByDate[key]);
                   return Column(
                     children: <Widget>[
-                      _getGroupSeparator( groupByDate[key]![index]),
+                      _getGroupSeparator(message),
                       ListView.builder(
-                        physics: const NeverScrollableScrollPhysics(),
+                          physics: const NeverScrollableScrollPhysics(),
                           shrinkWrap: true,
                           reverse: true,
-                          itemCount : groupByDate[key]!.length,
-                          itemBuilder: (BuildContext context, int index){
-                          return Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: _buildChatListTile(context, groupByDate[key]![index]),
-                          );
-                      }),
+                          itemCount: groupByDate[key]!.length,
+                          itemBuilder: (BuildContext context, int index) {
+                            return Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Dismissible(
+                                key: ValueKey<int>(groupByDate[key]![index].id),
+                                confirmDismiss:
+                                    (DismissDirection direction) async {
+                                  final bool? result =
+                                      await AppAlerts().alertWithButtons(
+                                    context: context,
+                                    title: 'Are you sure?',
+                                    desc: 'This operation is not reversible',
+                                    onLeftButtonPressed: () =>
+                                        Navigator.pop(context, false),
+                                    onRightButtonPressed: () =>
+                                        Navigator.pop(context, true),
+                                    alertType: AlertType.warning,
+                                  );
+                                  if (result == null || result == false) {
+                                    return false;
+                                  }
+                                  return true;
+                                },
+                                onDismissed: (DismissDirection direction) {
+                                  controller.deleteMessage(context,
+                                      groupByDate[key]![index].id, index);
+                                },
+                                child: GestureDetector(
+                                  onTap: () {
+                                    print(groupByDate[key]![index].id);
+                                  },
+                                  child: _buildChatListTile(
+                                      context, groupByDate[key]![index]),
+                                ),
+                              ),
+                            );
+                          }),
                       /*Column(
                         children: List<Widget>.generate(groupByDate[key]!.length , (int index) {
                           return _buildChatListTile(context, groupByDate[key]![index]);
@@ -108,9 +149,7 @@ class ChatScreen extends GetView<ChatController> {
                   );
                 },
               );
-
-            }
-               ),
+            }),
           ),
           _buildTextComposer(context),
         ],
@@ -118,29 +157,22 @@ class ChatScreen extends GetView<ChatController> {
     );
   }
 
-  Widget _getGroupSeparator(ChatMessage message ){
+  Widget _getGroupSeparator(ChatMessage message) {
     final DateTime element = DateTime.parse(message.createdAt!);
     return SizedBox(
       height: 50,
       child: Align(
         alignment: Alignment.center,
-        child: Container(
-          width: 120,
-          decoration: BoxDecoration(
-            color: PrimaryColor.color,
-            border: Border.all(
-              color: PrimaryColor.color,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Text(
+            DataFormatter.formatDateToString(
+              element.toIso8601String(),
             ),
-            borderRadius: const BorderRadius.all(Radius.circular(20.0)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text(
-              '${element.day}. ${element.month}, ${element.year}',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white54,
-              ),
+            // '${element.day}. ${element.month}, ${element.year}',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.black54,
             ),
           ),
         ),
@@ -173,7 +205,10 @@ class ChatScreen extends GetView<ChatController> {
           child: Padding(
             padding: const EdgeInsets.all(8.0),
             child: message.isImage && !isUser
-                ? Image.network(
+                ? /*Image.memory(
+                    Base64Convertor().base64toImage(message.text),
+                  )*/
+                 Image.network(
                     message.text,
                     loadingBuilder: (BuildContext context, Widget child,
                         ImageChunkEvent? loadingProgress) {
@@ -184,9 +219,12 @@ class ChatScreen extends GetView<ChatController> {
                         child: child,
                       );
                     },
+                  errorBuilder: (BuildContext context, Object object, StackTrace? stackTrace) =>
+                const Text('Cannot load image'),
                   )
-                : Text(
+                : SelectableText(
                     message.text.trimLeft(),
+                    cursorColor: PrimaryColor.chataiAccent,
                     // textAlign: isUser ? TextAlign.end : TextAlign.start,
                     style:
                         TextStyle(color: isUser ? Colors.white : Colors.black),

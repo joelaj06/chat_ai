@@ -1,10 +1,11 @@
 import 'package:chat_ai/core/error/failure.dart';
+import 'package:chat_ai/core/presentation/theme/theme_manager.dart';
 import 'package:chat_ai/features/chat_ai/data/datasource/sql_helper.dart';
 import 'package:chat_ai/features/chat_ai/data/model/message/message_model.dart';
 import 'package:chat_ai/features/chat_ai/data/model/message_image/message_image_model.dart';
 import 'package:chat_ai/features/chat_ai/data/request/chat_message/chat_message_request.dart';
-import 'package:chat_ai/features/chat_ai/data/request/chat_request.dart';
 import 'package:chat_ai/features/chat_ai/data/request/message_image_request.dart';
+import 'package:chat_ai/features/chat_ai/data/request/message_request.dart';
 import 'package:chat_ai/features/chat_ai/data/usecase/message/fetch_image_message.dart';
 import 'package:chat_ai/features/chat_ai/data/usecase/message/send_message.dart';
 import 'package:dartz/dartz.dart';
@@ -13,7 +14,9 @@ import 'package:get/get.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
+import '../../../data/datasource/database_tables.dart';
 import '../../../data/model/chat_message/chat_message_model.dart';
+import '../../../data/request/chat_message_request.dart';
 
 class ChatController extends GetxController {
   ChatController({
@@ -34,14 +37,17 @@ class ChatController extends GetxController {
   RxBool isRecording = false.obs;
   RxString recordedText = ''.obs;
   RxBool speechEnabled = false.obs;
+  RxBool isDarkMode = false.obs;
 
+  ThemeManagerController themeManagerController =
+      Get.find<ThemeManagerController>();
 
   final SpeechToText speechToText = SpeechToText();
   static const String _defaultText = 'Tap on the record button to start';
 
   @override
   void onInit() {
-   // SqlHelper.alterTable(DbTables.chatMessages, 'date');
+    SqlHelper.alterTable(DbTables.chatMessages, 'date');
     getAllChatMessages();
     recordedText(_defaultText);
     _initSpeech();
@@ -54,11 +60,16 @@ class ChatController extends GetxController {
     super.dispose();
   }
 
-  void getAllChatMessages() async{
+  void toggleTheme() {
+    isDarkMode(!isDarkMode.value);
+    themeManagerController.toggleTheme(isDarkMode.value);
+  }
+
+  void getAllChatMessages() async {
     final List<ChatMessage> messages = await SqlHelper.fetchChatMessages();
-  //  chatMessages(messages);
+    //  chatMessages(messages);
     chatMessages.clear();
-    for(final ChatMessage message in messages){
+    for (final ChatMessage message in messages) {
       chatMessages.insert(0, message);
     }
   }
@@ -97,14 +108,19 @@ class ChatController extends GetxController {
     );
   }
 
-
-
   void sendTheMessage(String message) async {
-    final List<String> stop = <String>['Human:', 'AI:'];
+  //  final List<String> stop = <String>['Human:', 'AI:'];
     isLoading(true);
     print(message);
+    final List<NewMessageRequest> messages = <NewMessageRequest>[
+      NewMessageRequest(role: 'user', content: message)
+    ];
     final Either<Failure, Message> failureOrMessage = await sendMessage(
-        MessageRequest(
+      NewChatMessageRequest(
+        model: 'gpt-3.5-turbo',
+        messages: messages,
+      ),
+      /* NewMessageRequest(
             model: 'text-davinci-003',
             prompt: message,
             topP: 1,
@@ -112,7 +128,8 @@ class ChatController extends GetxController {
             maxTokens: 200,
             frequencyPenalty: 0.0,
             presencePenalty: 0.0,
-            stop: stop));
+            stop: stop));*/
+    );
 
     failureOrMessage.fold(
       (Failure failure) {
@@ -122,9 +139,9 @@ class ChatController extends GetxController {
       },
       (Message message) {
         isLoading(false);
-         String text = message.choices?.first.text ?? '...';
+        String text = message.choices?.first.message?.content ?? '...';
 
-        if(text.contains('[Your name]')){
+        if (text.contains('[Your name]')) {
           text = text.replaceAll('[Your name]', 'Emy');
         }
         final ChatMessageRequest messageRequest = ChatMessageRequest(
@@ -156,17 +173,23 @@ class ChatController extends GetxController {
     await SqlHelper.addMessage(messageRequest);
     getAllChatMessages();
 
-    isImage ? getMessageImage(messageTextEditingController.value.text):
-    sendTheMessage(messageTextEditingController.value.text);
+    isImage
+        ? getMessageImage(messageTextEditingController.value.text)
+        : sendTheMessage(messageTextEditingController.value.text);
     messageTextEditingController.value.clear();
   }
 
+  void deleteMessage(BuildContext context, int messageId, int index) async {
+    chatMessages.removeAt(index);
+    await SqlHelper.deleteChatMessage(messageId);
+    getAllChatMessages();
+  }
 
   // initialize speech to text. Should be called once.
   void _initSpeech() async {
     final bool isSpeechEnabled = await speechToText.initialize(
-      //  finalTimeout:
-    );
+        //  finalTimeout:
+        );
     speechEnabled(isSpeechEnabled);
   }
 
@@ -194,10 +217,9 @@ class ChatController extends GetxController {
     isRecording(false);
     messageTextEditingController.value.text = recordedText.value;
     onMessageSend();
-  //  messageTextEditingController.value.clear();
+    //  messageTextEditingController.value.clear();
     resetSpeechText();
   }
-
 
   void resetSpeechText() {
     recordedText(_defaultText);
@@ -209,5 +231,3 @@ class ChatController extends GetxController {
 }
 
 enum Sender { user, bot }
-
-
