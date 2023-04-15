@@ -1,5 +1,6 @@
 import 'package:chat_ai/core/error/failure.dart';
 import 'package:chat_ai/core/presentation/theme/theme_manager.dart';
+import 'package:chat_ai/core/presentation/utitls/app_snack.dart';
 import 'package:chat_ai/features/chat_ai/data/datasource/sql_helper.dart';
 import 'package:chat_ai/features/chat_ai/data/model/message/message_model.dart';
 import 'package:chat_ai/features/chat_ai/data/model/message_image/message_image_model.dart';
@@ -10,10 +11,12 @@ import 'package:chat_ai/features/chat_ai/data/usecase/message/fetch_image_messag
 import 'package:chat_ai/features/chat_ai/data/usecase/message/send_message.dart';
 import 'package:dartz/dartz.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 
+import '../../../../../core/utils/base_64.dart';
 import '../../../data/datasource/database_tables.dart';
 import '../../../data/model/chat_message/chat_message_model.dart';
 import '../../../data/request/chat_message_request.dart';
@@ -38,6 +41,8 @@ class ChatController extends GetxController {
   RxString recordedText = ''.obs;
   RxBool speechEnabled = false.obs;
   RxBool isDarkMode = false.obs;
+  RxBool isImageLoading = false.obs;
+  RxInt selectedImage = (-1).obs;
 
   ThemeManagerController themeManagerController =
       Get.find<ThemeManagerController>();
@@ -60,6 +65,22 @@ class ChatController extends GetxController {
     super.dispose();
   }
 
+
+  void saveImage(String imgUrl) async{
+    isImageLoading(true);
+    final bool? isSuccess = await Base64Convertor().saveImageLocally(imgUrl);
+    if(isSuccess == null){
+      isImageLoading(false);
+      AppSnack().showError('Failed', 'Failed to save image');
+    }else if(isSuccess){
+      isImageLoading(false);
+      AppSnack().showSuccess('Success', 'Image saved in gallery');
+    }else{
+      isImageLoading(false);
+      AppSnack().showError('Failed', 'Failed to save image');
+    }
+  }
+
   void toggleTheme() {
     isDarkMode(!isDarkMode.value);
     themeManagerController.toggleTheme(isDarkMode.value);
@@ -78,7 +99,7 @@ class ChatController extends GetxController {
     isLoading(true);
     final Either<Failure, ImageMessage> failureOrImageMessage =
         await fetchImageMessage(MessageImageRequest(
-            size: '1024x1024',
+            size: '512x512',
             prompt: prompt,
             n: 1,
             user: '',

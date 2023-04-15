@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/cupertino.dart';
+import 'package:gallery_saver/gallery_saver.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
@@ -57,4 +59,12 @@ class Base64Convertor {
     final String base64Image = 'data:image/png;base64,${base64Encode(bytes)}';
     return base64Image;
   }
+
+  Future<bool?> saveImageLocally(String imgUrl) async{
+    final bool? success = await GallerySaver.saveImage(imgUrl, albumName: 'chatMe');
+    print(success);
+    return success;
+  }
+
+
 }

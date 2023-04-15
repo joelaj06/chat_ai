@@ -31,11 +31,11 @@ dependencies:
   chat_gpt_sdk: ^1.0.2+4
   collection: ^1.16.0
   dartz: ^0.10.1
-  #chat_gpt_sdk:
-    #git:logger: ^1.1.0inoIcons class for iOS style icons.
   flutter:
     sdk: flutter
+  flutter_file_dialog: ^3.0.0
   freezed_annotation: ^2.2.0
+  gallery_saver: ^2.3.2
   get: ^4.6.5
   http: ^0.13.5
   image_picker: ^0.8.7
@@ -43,6 +43,7 @@ dependencies:
   json_annotation: ^4.8.0
   logger: ^1.1.0
   open_file: ^3.2.1
+  path: ^1.8.2
   path_provider: ^2.0.11
   rflutter_alert: ^2.0.4
   shared_preferences: ^2.0.17
