@@ -1,4 +1,5 @@
 import 'package:avatar_glow/avatar_glow.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:chat_ai/core/presentation/theme/primary_color.dart';
 import 'package:chat_ai/core/utils/base_64.dart';
 import 'package:chat_ai/core/utils/data_formatter.dart';
@@ -116,7 +117,7 @@ class ChatScreen extends GetView<ChatController> {
                                       await AppAlerts().alertWithButtons(
                                     context: context,
                                     title: 'Are you sure?',
-                                    desc: 'This operation is not reversible',
+                                    desc: 'This action is not reversible',
                                     onLeftButtonPressed: () =>
                                         Navigator.pop(context, false),
                                     onRightButtonPressed: () =>
@@ -194,7 +195,7 @@ class ChatScreen extends GetView<ChatController> {
     int index,
   ) {
     final bool isUser = message.sender == Sender.user.name;
-    double width = MediaQuery.of(context).size.width;
+    //double width = MediaQuery.of(context).size.width;
     return Column(
       crossAxisAlignment:
           isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -219,10 +220,14 @@ class ChatScreen extends GetView<ChatController> {
                                 controller.selectedImage.value == index
                             ? Container(
                                 decoration: BoxDecoration(
-                                color: Colors.black54.withOpacity(0.5),
+                                  color: Colors.black54.withOpacity(0.5),
                                   borderRadius: BorderRadius.only(
-                                    topLeft: isUser ? const Radius.circular(10) : Radius.zero,
-                                    topRight: isUser ? Radius.zero : const Radius.circular(10),
+                                    topLeft: isUser
+                                        ? const Radius.circular(10)
+                                        : Radius.zero,
+                                    topRight: isUser
+                                        ? Radius.zero
+                                        : const Radius.circular(10),
                                     bottomLeft: const Radius.circular(10),
                                     bottomRight: const Radius.circular(10),
                                   ),
@@ -281,25 +286,31 @@ class ChatScreen extends GetView<ChatController> {
                 )*/
             GestureDetector(
                 onDoubleTap: () {},
-                child: Image.network(
-                  message.text,
-                  loadingBuilder: (BuildContext context, Widget child,
+                child: CachedNetworkImage(
+                  imageUrl: message.text,
+                  progressIndicatorBuilder: (BuildContext context, String url,
+                          DownloadProgress downloadProgress) =>
+                      CircularProgressIndicator(
+                          value: downloadProgress.progress),
+                  errorWidget:
+                      (BuildContext context, String url, dynamic error) =>
+                          const Icon(Icons.error),
+                  /*loadingBuilder: (BuildContext context, Widget child,
                       ImageChunkEvent? loadingProgress) {
                     if (loadingProgress != null) {
                       return const CircularProgressIndicator.adaptive();
                     }
                     return SizedBox(
                       child: child,
-                    );
-                  },
-                  errorBuilder: (BuildContext context, Object object,
-                          StackTrace? stackTrace) =>
-                      const Text('Cannot load image'),
+                    );*/
+                  // }
                 ),
               )
             : SelectableText(
                 message.text.trimLeft(),
+
                 cursorColor: PrimaryColor.chataiAccent,
+
                 // textAlign: isUser ? TextAlign.end : TextAlign.start,
                 style: TextStyle(
                   color: isUser
